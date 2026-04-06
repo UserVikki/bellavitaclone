@@ -12,7 +12,8 @@ const Login = () => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
-  const { login, signup } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, signup, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -24,32 +25,56 @@ const Login = () => {
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
-    if (isLogin) {
-      if (!formData.email || !formData.password) {
-        setError('Please fill in all fields');
-        return;
+    try {
+      if (isLogin) {
+        if (!formData.email || !formData.password) {
+          setError('Please fill in all fields');
+          setIsSubmitting(false);
+          return;
+        }
+        const result = await login(formData.email, formData.password);
+        if (result.success) {
+          // Redirect admin users to admin panel
+          if (result.user.role === 'ADMIN') {
+            navigate('/admin', { replace: true });
+          } else {
+            navigate(from, { replace: true });
+          }
+        } else {
+          setError(result.error);
+        }
+      } else {
+        if (!formData.name || !formData.email || !formData.password) {
+          setError('Please fill in all fields');
+          setIsSubmitting(false);
+          return;
+        }
+        if (formData.password !== formData.confirmPassword) {
+          setError('Passwords do not match');
+          setIsSubmitting(false);
+          return;
+        }
+        if (formData.password.length < 6) {
+          setError('Password must be at least 6 characters');
+          setIsSubmitting(false);
+          return;
+        }
+        const result = await signup(formData.name, formData.email, formData.password);
+        if (result.success) {
+          navigate(from, { replace: true });
+        } else {
+          setError(result.error);
+        }
       }
-      login(formData.email, formData.password);
-      navigate(from, { replace: true });
-    } else {
-      if (!formData.name || !formData.email || !formData.password) {
-        setError('Please fill in all fields');
-        return;
-      }
-      if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match');
-        return;
-      }
-      if (formData.password.length < 6) {
-        setError('Password must be at least 6 characters');
-        return;
-      }
-      signup(formData.name, formData.email, formData.password);
-      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -128,8 +153,8 @@ const Login = () => {
                 </div>
               )}
 
-              <button type="submit" className="btn btn-primary btn-lg auth__submit">
-                {isLogin ? 'Sign In' : 'Create Account'}
+              <button type="submit" className="btn btn-primary btn-lg auth__submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
               </button>
             </form>
 
