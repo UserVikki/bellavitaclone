@@ -1,70 +1,70 @@
 package com.plugin.erogonomics.service;
-}
-    }
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return userRepository.findByEmail(email)
-    public User getCurrentUser(String email) {
 
-    }
-        return new AuthResponse(token, user.getId(), user.getName(), user.getEmail(), user.getRole().name());
+import com.plugin.erogonomics.dto.AuthRequest;
+import com.plugin.erogonomics.dto.AuthResponse;
+import com.plugin.erogonomics.entity.User;
+import com.plugin.erogonomics.repository.UserRepository;
+import com.plugin.erogonomics.security.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+@Service
+public class AuthService {
 
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        User user = userRepository.findByEmail(request.getEmail())
+    @Autowired
+    private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    public AuthResponse signup(AuthRequest.SignupRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already exists");
         }
-            throw new RuntimeException("Invalid email or password");
-        } catch (BadCredentialsException e) {
-            );
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            authenticationManager.authenticate(
-        try {
-    public AuthResponse login(AuthRequest.LoginRequest request) {
 
-    }
-        return new AuthResponse(token, user.getId(), user.getName(), user.getEmail(), user.getRole().name());
-
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(User.Role.USER);
 
         user = userRepository.save(user);
 
-        user.setRole(User.Role.USER);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setEmail(request.getEmail());
-        user.setName(request.getName());
-        User user = new User();
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
+        return new AuthResponse(token, user.getId(), user.getName(), user.getEmail(), user.getRole().name());
+    }
+
+    public AuthResponse login(AuthRequest.LoginRequest request) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (BadCredentialsException e) {
+            throw new RuntimeException("Invalid email or password");
         }
-            throw new RuntimeException("Email already exists");
-        if (userRepository.existsByEmail(request.getEmail())) {
-    public AuthResponse signup(AuthRequest.SignupRequest request) {
 
-    private AuthenticationManager authenticationManager;
-    @Autowired
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-    private JwtUtil jwtUtil;
-    @Autowired
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
-    private PasswordEncoder passwordEncoder;
-    @Autowired
+        return new AuthResponse(token, user.getId(), user.getName(), user.getEmail(), user.getRole().name());
+    }
 
-    private UserRepository userRepository;
-    @Autowired
-
-public class AuthService {
-@Service
-
-import org.springframework.stereotype.Service;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.plugin.erogonomics.security.JwtUtil;
-import com.plugin.erogonomics.repository.UserRepository;
-import com.plugin.erogonomics.entity.User;
-import com.plugin.erogonomics.dto.AuthResponse;
-import com.plugin.erogonomics.dto.AuthRequest;
-
+    public User getCurrentUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+}
 
